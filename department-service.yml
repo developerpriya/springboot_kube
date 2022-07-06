@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: department-service-app
+  labels:
+    app: department-service-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: department-service-app
+  template:
+    metadata:
+      labels:
+        app: department-service-app
+    spec:
+      containers:
+        - name: department-service-app
+          image: priyas115/department-service:0.0.2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9001
+          env: # Setting Enviornmental Variables
+            - name: DB_HOST # Setting Database host address from configMap
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-conf # name of configMap
+                  key: host
+            - name: DB_NAME # Setting Database name from configMap
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-conf
+                  key: name
+            - name: POSTGRES_USER # Setting Database username from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials # Secret Name
+                  key: postgres_user
+            - name: POSTGRES_PASSWORD # Setting Database password from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: postgres_password
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: department-service-app
+spec:
+  ports:
+    - targetPort: 9001
+      port: 80
+  selector:
+    app: department-service-app
+  type: LoadBalancer

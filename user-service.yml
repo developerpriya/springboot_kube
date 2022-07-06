@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-service-app
+  labels:
+    app: user-service-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: user-service-app
+  template:
+    metadata:
+      labels:
+        app: user-service-app
+    spec:
+      containers:
+        - name: user-service-app
+          image: priyas115/user-service:0.0.2
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 9002
+          env: # Setting Enviornmental Variables
+            - name: DB_HOST # Setting Database host address from configMap
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-conf # name of configMap
+                  key: host
+            - name: DB_NAME # Setting Database name from configMap
+              valueFrom:
+                configMapKeyRef:
+                  name: postgres-conf
+                  key: name
+            - name: POSTGRES_USER # Setting Database username from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials # Secret Name
+                  key: postgres_user
+            - name: POSTGRES_PASSWORD # Setting Database password from Secret
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: postgres_password
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: user-service-app
+spec:
+  selector:
+    app: user-service-app
+  ports:
+    - port: 80
+      targetPort: 9002
+  type: LoadBalancer
